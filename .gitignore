@@ -1,3 +1,4 @@
 build
 install
 log
+src/my_py_pkg/my_py_pkg/__pycache__
