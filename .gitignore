@@ -1,5 +1,5 @@
 build
 install
 log
-src/my_py_pkg/my_py_pkg/__pycache__
+src/my_py_pkg/my_py_pkg/__pycache__/
 src/my_py_pkg/my_py_pkg/__pycache__/__init__.cpython-310.pyc
