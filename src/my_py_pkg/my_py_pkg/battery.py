@@ -10,6 +10,7 @@ class BatteryNode(Node):
 
       self.battery_last_state_change = self.getTime()
       self.battery_empty = True
+      self.callSetLedServer(3,True)
       timer_ = self.create_timer(0.1, self.simulateBattery)
       
 
@@ -17,7 +18,7 @@ class BatteryNode(Node):
 
 
    def getTime(self):
-      sec, nsec = self.get_clock().now().seconds_nanoseconds
+      sec, nsec = self.get_clock().now().seconds_nanoseconds()
       
       return sec + nsec /1000000000.0
       
@@ -25,15 +26,15 @@ class BatteryNode(Node):
       now = self.getTime()
       if self.battery_empty:
          if now - self.battery_last_state_change > 6.0:
-            self.battery_empty = False
             self.battery_last_state_change = now
-            self.callSetLedServer(3, True)
+            self.battery_empty = False
+            self.callSetLedServer(3, False)
             self.get_logger().info("Battery full")
       else:
          if now -self.battery_last_state_change > 4.0:
-            self.battery_empty = True
             self.battery_last_state_change = now
-            self.callSetLedServer(3, False)
+            self.battery_empty = True
+            self.callSetLedServer(3, True)
             self.get_logger().info("Battery empty")
       
       

@@ -1,1 +1,1 @@
-bool[3] led_state
+bool[] led_state
