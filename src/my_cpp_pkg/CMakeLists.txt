@@ -46,6 +46,9 @@ ament_target_dependencies(reset_counter rclcpp example_interfaces)
 add_executable(hw_status_publisher src/hw_status_publisher.cpp)
 ament_target_dependencies(hw_status_publisher rclcpp my_robot_interfaces)
 
+add_executable(led_panel src/led_panel.cpp)
+ament_target_dependencies(led_panel rclcpp my_robot_interfaces)
+
 install(TARGETS
   cpp_node
   robot_news_station
@@ -57,6 +60,7 @@ install(TARGETS
   add_two_ints_client
   reset_counter
   hw_status_publisher
+  led_panel
   DESTINATION lib/${PROJECT_NAME}
 )
 

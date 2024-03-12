@@ -6,10 +6,12 @@ class LedPanelNode : public rclcpp::Node
 {
 public:
     LedPanelNode() : Node("led_panel"), leds(3, false)
-        {
-        auto pub_ = this->create_publisher<my_robot_interfaces::msg::LedStates>("led_panel_state", 10);
-        auto service_ = this->create_service<my_robot_interfaces::srv::SetLed>("set_led",
-                                                                               std::bind(&LedPanelNode::callbackSetLed, this));
+    {
+        pub_ = this->create_publisher<my_robot_interfaces::msg::LedStates>("led_panel_state", 10);
+
+        service_ = this->create_service<my_robot_interfaces::srv::SetLed>("set_led",
+                                                                          std::bind(&LedPanelNode::callbackSetLed,
+                                                                                    this, std::placeholders::_1, std::placeholders::_2));
         RCLCPP_INFO(this->get_logger(), "led_panel has been started");
     }
 
@@ -18,10 +20,19 @@ private:
     {
         auto msg = my_robot_interfaces::msg::LedStates();
         msg.led_state = leds;
-
+        pub_->publish(msg);
     }
 
-    void callbackSetLed() {}
+    void callbackSetLed(const my_robot_interfaces::srv::SetLed::Request::SharedPtr request,
+                        const my_robot_interfaces::srv::SetLed::Response::SharedPtr resopnse)
+    {
+        int led = request->led_number;
+        bool state = request->state;
+        RCLCPP_INFO(this->get_logger(), "led %d has been set to %s", led, state ? "on" : "off");
+        leds[led - 1] = state;
+        this->publishLedState();
+        resopnse->success = true;
+    }
 
     std::vector<bool> leds;
     rclcpp::Publisher<my_robot_interfaces::msg::LedStates>::SharedPtr pub_;
