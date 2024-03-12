@@ -28,6 +28,14 @@ private:
     {
         int led = request->led_number;
         bool state = request->state;
+        if (!(led > 0 and led < 4))
+        {
+            resopnse->success = false;
+            RCLCPP_ERROR(this->get_logger(), "Service call denied. got invaled led number:%d. allowed number 1-3" , led);
+            return;
+            
+        }
+
         RCLCPP_INFO(this->get_logger(), "led %d has been set to %s", led, state ? "on" : "off");
         leds[led - 1] = state;
         this->publishLedState();

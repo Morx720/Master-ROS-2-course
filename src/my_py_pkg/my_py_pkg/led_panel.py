@@ -24,7 +24,10 @@ class LedPanelNode(Node):
         
         led = request.led_number
         state = request.state
-       
+        if not (led <4 and led >0):
+            self.get_logger().error(f"Service call denied. got invaled led number:{led}. allowed number 1-3")
+            response.success = False
+            return response
         self.leds[led-1] = state
         self.publishLedState()
         response.success = True
