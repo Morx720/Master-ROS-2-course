@@ -28,7 +28,8 @@ setup(
             "add_two_ints_client_no_oop=my_py_pkg.add_two_ints_client_no_oop:main",
             "hw_status_publisher=my_py_pkg.hw_status_publisher:main",
             "battery=my_py_pkg.battery:main",
-            "led_panel=my_py_pkg.led_panel:main"
+            "led_panel=my_py_pkg.led_panel:main",
+            "robot_news_station=my_py_pkg.robot_news_station:main"
         ],
     },
 )

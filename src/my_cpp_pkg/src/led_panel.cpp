@@ -5,14 +5,18 @@
 class LedPanelNode : public rclcpp::Node
 {
 public:
-    LedPanelNode() : Node("led_panel"), leds(3, false)
+    LedPanelNode() : Node("led_panel")
     {
+        this->declare_parameter("led_states", std::vector<bool>{false,false, false});
+        leds = this->get_parameter("led_states").as_bool_array();
+
         pub_ = this->create_publisher<my_robot_interfaces::msg::LedStates>("led_panel_state", 10);
 
         service_ = this->create_service<my_robot_interfaces::srv::SetLed>("set_led",
                                                                           std::bind(&LedPanelNode::callbackSetLed,
                                                                                     this, std::placeholders::_1, std::placeholders::_2));
         RCLCPP_INFO(this->get_logger(), "led_panel has been started");
+        this->publishLedState();
     }
 
 private:

@@ -9,11 +9,13 @@ class LedPanelNode(Node):
     def __init__(self):
         super().__init__("led_panel")
 
-        self.leds = [False,False,False]
+        self.declare_parameter("led_states", [False,False,False])
+        self.leds = self.get_parameter("led_states").value
         
         self.pub_ = self.create_publisher(LedStates, "led_panel_state",10)
         self.server_ = self.create_service(SetLed, "set_led", self.callbackSetLed)
         self.get_logger().info("led_panel has been started")
+        self.publishLedState()
 
     def publishLedState(self):
         msg = LedStates()
