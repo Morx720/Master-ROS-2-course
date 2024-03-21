@@ -29,7 +29,8 @@ setup(
             "hw_status_publisher=my_py_pkg.hw_status_publisher:main",
             "battery=my_py_pkg.battery:main",
             "led_panel=my_py_pkg.led_panel:main",
-            "robot_news_station=my_py_pkg.robot_news_station:main"
+            "robot_news_station=my_py_pkg.robot_news_station:main",
+            "smartphone=my_py_pkg.smartphone:main"
         ],
     },
 )
