@@ -6,7 +6,8 @@ from geometry_msgs.msg import Twist
 from my_robot_interfaces.msg import AliveTurtles
 from my_robot_interfaces.msg import Turtle
 from my_robot_interfaces.srv import CatchTurtle
-
+from my_robot_interfaces.srv import TunePid
+from my_robot_interfaces.srv import GetPidValues
 from functools import partial
 
 import math
@@ -22,6 +23,7 @@ class turtleControllerNode(Node):
         self.pose_sub = self.create_subscription(Pose, "turtle1/pose", self.callbackTurtlePose,10)
         self.alive_turtles_sub = self.create_subscription(AliveTurtles, "alive_turtles", self.updateTarget,10)
         self.cmd_Vel_pub = self.create_publisher(Twist, "turtle1/cmd_vel", 10)
+        self.tune_pid_server = self.create_service(TunePid, "tune_pid", self.callbackTunePid)
         self.control_timer = self.create_timer(0.001,self.callbackControllLoop)
 
         self.turtue_to_catch = None
@@ -106,6 +108,14 @@ class turtleControllerNode(Node):
         except Exception as e:
             self.get_logger().error(f"Servce call faild with exception {e}") 
 
+    def callbackTunePid(self, request:TunePid.Request, response:TunePid.Response):
+        self.pid_lin_vel.tunings(request.linear_velocity.p, request.linear_velocity.i, request.linear_velocity.d)
+        self.pid_ang_vel.tunings(request.angular_velocity.p, request.angular_velocity.i, request.angular_velocity.d)
+        response.success = True
+        return response
+    
+    def callbackGetPidValues(self, request:GetPidValues.Request, response:GetPidValues.Response):
+        pass
 
 
 def pi_clip(angle):
