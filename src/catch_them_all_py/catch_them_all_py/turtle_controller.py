@@ -24,6 +24,7 @@ class turtleControllerNode(Node):
         self.alive_turtles_sub = self.create_subscription(AliveTurtles, "alive_turtles", self.updateTarget,10)
         self.cmd_Vel_pub = self.create_publisher(Twist, "turtle1/cmd_vel", 10)
         self.tune_pid_server = self.create_service(TunePid, "tune_pid", self.callbackTunePid)
+        self.get_pid_server = self.create_service(GetPidValues, "get_pid_values", self.callbackGetPidValues)
         self.control_timer = self.create_timer(0.001,self.callbackControllLoop)
 
         self.turtue_to_catch = None
@@ -109,13 +110,27 @@ class turtleControllerNode(Node):
             self.get_logger().error(f"Servce call faild with exception {e}") 
 
     def callbackTunePid(self, request:TunePid.Request, response:TunePid.Response):
-        self.pid_lin_vel.tunings(request.linear_velocity.p, request.linear_velocity.i, request.linear_velocity.d)
-        self.pid_ang_vel.tunings(request.angular_velocity.p, request.angular_velocity.i, request.angular_velocity.d)
+        self.pid_lin_vel.Kp = request.linear_velocity.p
+        self.pid_lin_vel.Ki = request.linear_velocity.i
+        self.pid_lin_vel.Kd = request.linear_velocity.d
+        
+        self.pid_ang_vel.Kp = request.angular_velocity.p
+        self.pid_ang_vel.Ki = request.angular_velocity.i
+        self.pid_ang_vel.Kd = request.angular_velocity.d
+       
         response.success = True
         return response
     
     def callbackGetPidValues(self, request:GetPidValues.Request, response:GetPidValues.Response):
-        pass
+        response.linear_velocity.p = self.pid_lin_vel.Kp
+        response.linear_velocity.i = self.pid_lin_vel.Ki
+        response.linear_velocity.d = self.pid_lin_vel.Kd
+        
+        response.angular_velocity.p = self.pid_ang_vel.Kp
+        response.angular_velocity.i = self.pid_ang_vel.Ki
+        response.angular_velocity.d = self.pid_ang_vel.Kd
+        
+        return response
 
 
 def pi_clip(angle):
