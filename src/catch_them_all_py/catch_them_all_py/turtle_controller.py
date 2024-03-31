@@ -74,7 +74,7 @@ class turtleControllerNode(Node):
             target_theta = math.atan2(dist_y, dist_x)
             diff_theta = target_theta - self.pose_.theta
                     
-            clipped_theta = pi_clip(-diff_theta)
+            clipped_theta = self.pi_clip(-diff_theta)
             
             msg.angular.z = self.pid_ang_vel(clipped_theta)
             
@@ -133,14 +133,14 @@ class turtleControllerNode(Node):
         return response
 
 
-def pi_clip(angle):
-    if angle > 0:
-        if angle > math.pi:
-            return angle - 2*math.pi
-    else:
-        if angle < -math.pi:
-            return angle + 2*math.pi
-    return angle
+    def pi_clip(self, angle):
+        if angle > 0:
+            if angle > math.pi:
+                return angle - 2*math.pi
+        else:
+            if angle < -math.pi:
+                return angle + 2*math.pi
+        return angle
 
 
         
