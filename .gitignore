@@ -3,3 +3,6 @@ install
 log
 src/my_py_pkg/my_py_pkg/__pycache__/
 src/my_py_pkg/my_py_pkg/__pycache__/__init__.cpython-310.pyc
+src/catch_them_all_py/catch_them_all_py/__pycache__/__init__.cpython-310.pyc
+src/catch_them_all_py/catch_them_all_py/__pycache__/turtle_controller.cpython-310.pyc
+src/catch_them_all_py/catch_them_all_py/__pycache__/turtle_spawner.cpython-310.pyc
