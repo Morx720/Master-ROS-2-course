@@ -1,6 +1,10 @@
+#include <iostream>
+#include <random>
 #include "rclcpp/rclcpp.hpp"
 #include "my_robot_interfaces/msg/alive_turtles.hpp"
 #include "my_robot_interfaces/srv/catch_turtle.hpp"
+#include "turtlesim/srv/spawn.hpp"
+#include "turtlesim/srv/kill.hpp"
 
 class turtleSpawnerNode : public rclcpp::Node
 {
@@ -25,6 +29,13 @@ public:
     }
 
 private:
+    float randomFloat(float min, float max)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dis(min, max);
+        return dis(gen);
+    }
     void publishAliveTurtle()
     {
         auto msg = my_robot_interfaces::msg::AliveTurtles();
@@ -32,15 +43,84 @@ private:
         alive_turtle_pup_->publish(msg);
     }
 
-    void catchTurtleCallback(const my_robot_interfaces::srv::CatchTurtle::Request request,
-                             const my_robot_interfaces::srv::CatchTurtle::Response response)
+    void catchTurtleCallback(const my_robot_interfaces::srv::CatchTurtle::Request::SharedPtr request,
+                             const my_robot_interfaces::srv::CatchTurtle::Response::SharedPtr response)
     {
-        
+        killTurtle(request->name);
+        response->success = true;
     }
 
-    void spawnRandomTurtle() {}
+    void spawnRandomTurtle()
+    {
+        auto client = this->create_client<turtlesim::srv::Spawn>("spawn");
+        while (!client->wait_for_service(std::chrono::seconds(1)))
+        {
+            RCLCPP_WARN(this->get_logger(), "Waiting for server ....");
+        }
+        auto request = std::make_shared<turtlesim::srv::Spawn_Request>();
+        request->x = randomFloat(1.0, 10.0);
+        request->y = randomFloat(1.0, 10.0);
+        request->theta = randomFloat(0.0, 2 * M_PI);
+        request->name = name_prefix_ + std::to_string(turtle_count_);
+        turtle_count_ += 1;
 
-    void killTurtle(std::string turtle_name){}
+        auto future = client->async_send_request(request);
+
+        try
+        {
+            auto response = future.get();
+            if (response->name != "")
+            {
+                auto new_turtle = my_robot_interfaces::msg::Turtle();
+                new_turtle.name = response->name;
+                new_turtle.x = request->x;
+                new_turtle.y = request->y;
+                new_turtle.theta = request->theta;
+                alive_turtle.push_back(new_turtle);
+                publishAliveTurtle();
+
+                RCLCPP_INFO(this->get_logger(), "turtlesim has spawned %s", response->name.c_str());
+            }
+        }
+        catch (const std::exception &e)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Servce call failed");
+        }
+    }
+
+    void killTurtle(std::string turtle_name)
+    {
+        auto client = this->create_client<turtlesim::srv::Kill>("kill");
+        while (!client->wait_for_service(std::chrono::seconds(1)))
+        {
+            RCLCPP_WARN(this->get_logger(), "Waiting for server ....");
+        }
+        auto request = std::make_shared<turtlesim::srv::Kill>();
+        request->name = turtle_name;
+/////////////////////////////////////////////////////////////////////////
+        auto future = client->async_send_request(request);
+
+        try
+        {
+            auto response = future.get();
+            if (response->name != "")
+            {
+                auto new_turtle = my_robot_interfaces::msg::Turtle();
+                new_turtle.name = response->name;
+                new_turtle.x = request->x;
+                new_turtle.y = request->y;
+                new_turtle.theta = request->theta;
+                alive_turtle.push_back(new_turtle);
+                publishAliveTurtle();
+
+                RCLCPP_INFO(this->get_logger(), "turtlesim has spawned %s", response->name.c_str());
+            }
+        }
+        catch (const std::exception &e)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Servce call failed");
+        }
+    }
 
     int turtle_count_;
     double spawnRate_;
