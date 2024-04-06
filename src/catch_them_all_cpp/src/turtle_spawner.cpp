@@ -9,7 +9,7 @@
 class turtleSpawnerNode : public rclcpp::Node
 {
 public:
-    turtleSpawnerNode() : Node("turttle_spawner"), turtle_count_(1)
+    turtleSpawnerNode() : Node("turtle_spawner"), turtle_count_(1)
     {
         this->declare_parameter("spawn_frequency", 1.0);
         spawnRate_ = this->get_parameter("spawn_frequency").as_double();
@@ -23,7 +23,7 @@ public:
                                          std::bind(&turtleSpawnerNode::spawnRandomTurtle, this));
 
         catch_turtle_server_ = this->create_service<my_robot_interfaces::srv::CatchTurtle>("catch_turtle",
-                                                                                           std::bind(&turtleSpawnerNode::catchTurtleCallback, this));
+                                                                                           std::bind(&turtleSpawnerNode::catchTurtleCallback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(this->get_logger(), "turttle_spawner has been started");
     }
@@ -46,16 +46,22 @@ private:
     void catchTurtleCallback(const my_robot_interfaces::srv::CatchTurtle::Request::SharedPtr request,
                              const my_robot_interfaces::srv::CatchTurtle::Response::SharedPtr response)
     {
-        killTurtle(request->name);
+        kill_turtle_threads_.push_back(std::make_shared<std::thread>(std::bind(&turtleSpawnerNode::killTurtle, this, request->name)));
+
         response->success = true;
     }
 
     void spawnRandomTurtle()
     {
+        spawn_turtle_threads_.push_back(std::make_shared<std::thread>(std::bind(&turtleSpawnerNode::callSpawnTurtleServer, this)));
+    }
+
+    void callSpawnTurtleServer()
+    {
         auto client = this->create_client<turtlesim::srv::Spawn>("spawn");
         while (!client->wait_for_service(std::chrono::seconds(1)))
         {
-            RCLCPP_WARN(this->get_logger(), "Waiting for server ....");
+            RCLCPP_WARN(this->get_logger(), "Waiting for spawn server ....");
         }
         auto request = std::make_shared<turtlesim::srv::Spawn_Request>();
         request->x = randomFloat(1.0, 10.0);
@@ -93,27 +99,24 @@ private:
         auto client = this->create_client<turtlesim::srv::Kill>("kill");
         while (!client->wait_for_service(std::chrono::seconds(1)))
         {
-            RCLCPP_WARN(this->get_logger(), "Waiting for server ....");
+            RCLCPP_WARN(this->get_logger(), "Waiting for kill server ....");
         }
-        auto request = std::make_shared<turtlesim::srv::Kill>();
+        auto request = std::make_shared<turtlesim::srv::Kill_Request>();
         request->name = turtle_name;
-/////////////////////////////////////////////////////////////////////////
+
         auto future = client->async_send_request(request);
 
         try
         {
-            auto response = future.get();
-            if (response->name != "")
+            future.get();
+            for (int i = 0; i < (int)alive_turtle.size(); i++)
             {
-                auto new_turtle = my_robot_interfaces::msg::Turtle();
-                new_turtle.name = response->name;
-                new_turtle.x = request->x;
-                new_turtle.y = request->y;
-                new_turtle.theta = request->theta;
-                alive_turtle.push_back(new_turtle);
-                publishAliveTurtle();
-
-                RCLCPP_INFO(this->get_logger(), "turtlesim has spawned %s", response->name.c_str());
+                if (alive_turtle.at(i).name == turtle_name)
+                {
+                    alive_turtle.erase(alive_turtle.begin() + i);
+                    publishAliveTurtle();
+                    break;
+                }
             }
         }
         catch (const std::exception &e)
@@ -130,6 +133,9 @@ private:
     rclcpp::Publisher<my_robot_interfaces::msg::AliveTurtles>::SharedPtr alive_turtle_pup_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Service<my_robot_interfaces::srv::CatchTurtle>::SharedPtr catch_turtle_server_;
+
+    std::vector<std::shared_ptr<std::thread>> spawn_turtle_threads_;
+    std::vector<std::shared_ptr<std::thread>> kill_turtle_threads_;
 };
 
 int main(int argc, char **argv)
